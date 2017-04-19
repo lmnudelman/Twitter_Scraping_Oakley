@@ -1,0 +1,76 @@
+---
+title: "Twitter Scraping + WordCloud"
+author: "Lucas Nudelman"
+date: "April 19, 2017"
+output: html_document
+---
+
+```{r message=FALSE, warning=FALSE}
+## Install all necessary packages ##
+#install.packages("tm")
+#install.packages("wordcloud2", repos="http://cran.rstudio.com/")
+#install.packages("twitteR", repos="http://cran.rstudio.com/")
+#install.packages("ROAuth", repos="http://cran.rstudio.com/") 
+#install.packages("tidytext", repos="http://cran.rstudio.com/") 
+library("wordcloud")
+library(tm) 
+library("twitteR")
+library("ROAuth")
+library("tidytext") 
+```
+
+```{r message=FALSE, warning=FALSE}
+## Authorize twitteR ##
+consumerKey <- "40eLhkUYfufXgyDK1fFtX2BPu"
+consumerSecret <- "MPnKNfhOIQbnbfyTC1ZbapevKska0aJOFl4qOOewDuXYGcl5WL"
+accessToken <- '440579662-mnZ0WHCRj4WVt3DZWZFdGi5UDpTKgwTVe4Ltlj6E'
+accessSecret <- '2X8hvTRTVIiAwUQ6Z1o21EDI1vJvz4v28QDr7QWnOf0w7'
+
+setup_twitter_oauth(consumer_key=consumerKey, consumer_secret=consumerSecret, access_token=accessToken, access_secret=accessSecret)
+```
+
+```{r message=FALSE, warning=FALSE}
+## Pull  the tweets, n specifies how many (maximum 5000) ##
+OakleyTweets <- searchTwitter('#Oakley', n=1200)
+```
+
+```{r message=FALSE, warning=FALSE}
+## Extracting the content of the tweets you just pulled ##
+OakleyContent <- sapply(OakleyTweets, function(x) x$getText())
+```
+
+```{r message=FALSE, warning=FALSE}
+## Remove all the emojis from what you just pulled (they get messy) ##
+OakleyContentWOE <- iconv(OakleyContent, 'UTF-8', 'ASCII')
+```
+
+```{r message=FALSE, warning=FALSE}
+## Corpus is from the tm package, and its just how you have to store the words ##
+Oakley_Corpus = Corpus(VectorSource(OakleyContentWOE))
+```
+
+```{r message=FALSE, warning=FALSE}
+## Make a term document matrix from the corpus ##
+tdm <- TermDocumentMatrix(Oakley_Corpus, control = list(removePunctuation = TRUE,stopwords = c("Oakley", "oakley", stopwords("english")), removeNumbers = TRUE, tolower = TRUE))
+```
+
+```{r message=FALSE, warning=FALSE}
+## Convert as matrix ##
+m <- as.matrix(tdm)
+```
+
+```{r message=FALSE, warning=FALSE}
+## This will get you word counts in descending order ##
+word_freqs = sort(rowSums(m), decreasing=TRUE)
+```
+
+```{r message=FALSE, warning=FALSE}
+## This creates a dataframe of each word with corresponding frequency ##
+dm <- data.frame(word=names(word_freqs), freq=word_freqs)
+```
+
+```{r message=FALSE, warning=FALSE}
+## Finally, your word cloud is produced ##
+wordcloud(dm$word, dm$freq, random.order=FALSE, colors=brewer.pal(8, "Dark2"))
+```
+
